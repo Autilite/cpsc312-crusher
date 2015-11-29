@@ -135,6 +135,43 @@ newBoards0 = generateNewStates board0 [] grid0 slides0 jumps0 W
 tree0 = generateTree board0 [] grid0 slides0 jumps0 W 4 3
 heuristic0 = boardEvaluator W [] 3
 
+-- some items useful for testing:
+grid3::[Point]
+grid3 = [(0,0),(1,0),(2,0),(0,1),(1,1),(2,1),(3,1),(0,2),(1,2),(2,2),(3,2),(4,2),(0,3),(1,3),(2,3),(3,3),(0,4),(1,4),(2,4)]
+
+grid2:: [Point]
+grid2 = [(0,0),(1,0),(0,1),(1,1),(2,1),(0,2),(1,2)]
+
+state2 :: State
+state2 = [(B,(0,0)),(D, (1,0)), (D, (0,1)),(B,(1,1)),(D,(2,1)),(W,(0,2)),(D,(1,2))]
+
+state2_from :: State
+state2_from = [(B,(0,0)),(B,(1,0)),(D,(0,1)),(B,(1,1)),(D,(2,1)),(W,(0,2)),(D,(1,2))]
+
+board2 :: Board
+board2 = [B,D,D,B,D,W,D]
+
+
+history2 = []
+
+moves2 :: [Move]
+moves2 = [((0,0),(1,0)),((0,0),(0,1)),((0,0),(1,2)),((1,1),(2,1)),((1,1),(1,2))]
+
+slides:: [Slide]
+slides = [((1,4),(1,5)),((1,4),(2,4)),((1,4),(0,5)),((1,4),(2,3)),((1,4),(1,3)),((1,4),(0
+ ,4))]
+
+slides2 :: [Slide]
+slides2 = [((0,0),(1,0)),((0,0),(1,1)),((0,0),(0,1)),((1,0),(0,0)),((1,0),(2,1)),((1,0),
+ (1,1)),((0,1),(0,0)),((0,1),(1,1)),((0,1),(0,2)),((1,1),(0,1)),((1,1),(0,0)),((1,1),
+ (1,0)),((1,1),(2,1)),((1,1),(1,2)),((1,1),(0,2)),((2,1),(1,1)),((2,1),(1,0)),
+ ((2,1),(1,2)),((0,2),(0,1)),((0,2),(1,1)),((0,2),(1,2)),((1,2),(0,2)),((1,2),(1,1)),
+ ((1,2),(2,1))]
+
+jumps2 :: [Jump]
+jumps2 = [((0,0),(1,1),(1,2)),((1,0),(1,1),(0,2)),((0,1),(1,1),(2,1)),((2,1),(1,1),(0,1)),
+ ((0,2),(1,1),(1,0)),((1,2),(1,1),(0,0))]
+
 --
 -- crusher
 --
@@ -192,10 +229,10 @@ gameOver board history n = -- To Be Completed
 
 sTrToBoard :: String  -> Board
 sTrToBoard s = map (\ x -> check x) s
-	where 
-		check 'W' = W
-		check 'B' = B
-		check '-' = D
+ where 
+  check 'W' = W
+  check 'B' = B
+  check '-' = D
 
 --
 -- boardToStr
@@ -214,10 +251,10 @@ sTrToBoard s = map (\ x -> check x) s
 
 boardToStr :: Board -> String
 boardToStr b = map (\ x -> check x) b
-	where 
-		check W = 'W'
-		check B = 'B'
-		check D = '-'
+ where 
+  check W = 'W'
+  check B = 'B'
+  check D = '-'
 
 --
 -- generateGrid
@@ -245,11 +282,11 @@ boardToStr b = map (\ x -> check x) b
 
 generateGrid :: Int -> Int -> Int -> Grid -> Grid
 generateGrid n1 n2 n3 acc 
-	| n3 == -1		= acc
-	| otherwise 	= generateGrid nn1 (n2 - 1) (n3 - 1) (row ++ acc)
-		where
-			row = map (\ x -> (x,n3)) [0 .. (n1 - 1)]
-			nn1 = if n2 > 0 then n1 + 1 else n1 - 1
+ | n3 == -1 = acc
+ | otherwise = generateGrid nn1 (n2 - 1) (n3 - 1) (row ++ acc)
+  where
+   row = map (\ x -> (x,n3)) [0 .. (n1 - 1)]
+   nn1 = if n2 > 0 then n1 + 1 else n1 - 1
 
 --
 -- generateSlides
@@ -271,8 +308,54 @@ generateGrid n1 n2 n3 acc
 -- Returns: the list of all Slides possible on the given grid
 --
 
-generateSlides :: Grid -> Int -> [Slide]
-generateSlides b n = -- To Be Completed 
+---------completed----------
+generateSlides :: Grid -> Int -> [Slide] -- To Be Completed 
+generateSlides [] n = []
+generateSlides b n = generateSlides_helper b b n
+
+generateSlides_helper b points_left n
+ | points_left == [] = []
+ | otherwise = 
+    (generateValidSlidesForOnePoint b (generateAllSlidesForOnePoint (head points_left) n)) ++
+     (generateSlides_helper b (tail points_left) n)
+
+-- given a grid and a list of slides of a point, filters out all the invalid slides
+-- based on the grid, and returns that list of valid slides in the end.
+generateValidSlidesForOnePoint:: Grid -> [Slide] -> [Slide]
+generateValidSlidesForOnePoint b slides
+ | b == [] = []
+ | slides == [] = []
+ | elem (snd (head slides)) b = (head slides):(generateValidSlidesForOnePoint b (tail slides))
+ | otherwise = (generateValidSlidesForOnePoint b (tail slides))
+
+-- given a point, returns all the slides for that point
+-- the slides for a given point * is listed in the order of:
+--           2_ 3_
+--         1_  *_ 4_
+--           6_ 5_
+-- the reason for this ordering is for easiness of getting leap points
+-- as this function will also be used as a helper function for getting
+-- leap points.
+-- Different formula is applied to different points. There are three cases:
+-- 1. point is above the middle line
+-- 2. point is below the middle line
+-- 3. point is on the middle line 
+generateAllSlidesForOnePoint :: Point -> Int -> [Slide]
+generateAllSlidesForOnePoint p int 
+ | (snd p) < (div (2*n-2) 2) = 
+      list ++ [(p, (fst lp, (snd lp)-1)), (p, (fst rp, (snd rp)+1))]
+ | (snd p) > (div (2*n-2) 2) = 
+      list ++ [(p, (fst lp, (snd lp)+1)), (p, (fst rp, (snd rp)-1))]
+ | otherwise = 
+      list ++ [(p, (fst lp, (snd lp)-1)), (p, (fst lp, (snd rp)+1))]
+ where
+ n = fromIntegral int
+ list = [(p, (fst p, (snd p)-1)),
+          (p, (fst p, (snd p)+1)),
+          (p, ((fst p)-1, snd p)),
+          (p, ((fst p)+1, snd p))]
+ lp = ((fst p)-1, snd p)
+ rp = ((fst p)+1, snd p)
 
 --
 -- generateLeaps
@@ -295,8 +378,91 @@ generateSlides b n = -- To Be Completed
 -- Returns: the list of all Jumps possible on the given grid
 --
 
-generateLeaps :: Grid -> Int -> [Jump]
-generateLeaps b n = -- To Be Completed
+---------completed----------
+generateLeaps :: Grid -> Int -> [Jump] -- To Be Completed 
+generateLeaps [] n = []
+generateLeaps b n = generateLeaps_helper b b n
+
+generateLeaps_helper b points_left n
+ | points_left == [] = []
+ | otherwise = 
+    (generateValidLeapsForOnePoint b (generateAllLeapsForOnePoint (head points_left) n)) ++
+     (generateLeaps_helper b (tail points_left) n)
+
+-- given a grid and a list of leaps of a point, filters out all the invalid leaps
+-- based on the grid, and returns that list of valid leaps in the end.
+generateValidLeapsForOnePoint:: Grid -> [Jump] -> [Jump]
+generateValidLeapsForOnePoint b leaps
+ | b == [] = []
+ | leaps == [] = []
+ | elem (get_jump_thd (head leaps)) b = (head leaps):(generateValidLeapsForOnePoint b (tail leaps))
+ | otherwise = (generateValidLeapsForOnePoint b (tail leaps))
+
+-- given a point, returns all the leaps for that point in the order of:
+-- starting from the left point and go clockwise.
+generateAllLeapsForOnePoint :: Point -> Int -> [Jump]
+generateAllLeapsForOnePoint p n =
+ [(p, (snd (one s)), ((fst (snd (one s)))-1, snd (snd (one s)))),
+  (p, (snd (two s)), (fortwo (snd (two s)) n)),
+  (p, (snd (three s)), (forthree (snd (three s)) n)),
+  (p, (snd (four s)), ((fst (snd (four s)))+1, snd (snd (four s)))),
+  (p, (snd (five s)), (forfive (snd (five s)) n)),
+  (p, (snd (six s)), (forsix (snd (six s)) n))]
+ where
+ s = generateAllSlidesForOnePoint p n
+
+-- the slides for a given point * is listed in the order of:
+--           2_ 3_
+--         1_  *_ 4_
+--           6_ 5_
+-- in order to get leaps for *, point 1, 2, 3, 4, 5, 6 will be used for
+-- determining the leap points. However, depending on where point 1-6 are,
+-- there need to be different formulas for different points under different
+-- conditions for getting the leap points. See the following: 
+fortwo :: Point -> Int -> Point
+fortwo p n 
+ | (snd p) <= (div (2*n-2) 2) = ((fst p)-1, (snd p)-1)
+ | otherwise = (fst p, (snd p)-1)
+
+forthree :: Point -> Int -> Point
+forthree p n
+ | (snd p) <= (div (2*n-2) 2) = (fst p, (snd p)-1)
+ | otherwise = ((fst p)+1, (fst p)-1)
+
+forfive :: Point -> Int -> Point
+forfive p n
+ | (snd p) >= (div (2*n-2) 2) = (fst p, (snd p)+1)
+ | otherwise = ((fst p)+1, (snd p)+1)
+
+forsix :: Point -> Int -> Point
+forsix p n
+ | (snd p) >= (div (2*n-2) 2) = ((fst p)-1, (snd p)+1)
+ | otherwise = (fst p, (snd p)+1)
+
+-- because generateAllLeapsForOnePoint uses a list of slides of a given point
+-- the following functions are to help accessing particular elements in the list.
+one :: [Slide] -> Slide
+one list = (head list)
+two :: [Slide] -> Slide
+two list = (head (tail list))
+three :: [Slide] -> Slide
+three list = (head (tail (tail list)))
+four :: [Slide] -> Slide
+four list = (head (tail(tail(tail list))))
+five :: [Slide] -> Slide
+five list = (head (tail(tail(tail (tail list)))))
+six :: [Slide] -> Slide
+six list = (head (tail(tail(tail (tail (tail list))))))
+
+-- get the first, second, or third element from a jump
+get_jump_thd:: Jump -> Point
+get_jump_thd (a,b,c) = c
+
+get_jump_fst:: Jump -> Point
+get_jump_fst (a,b,c) = a
+
+get_jump_snd:: Jump -> Point
+get_jump_snd (a,b,c) = b
 
 --
 -- stateSearch
@@ -367,8 +533,80 @@ generateTree board history grid slides jumps player depth n = -- To Be Completed
 -- Returns: the list of next boards
 --
 
+---------completed----------
 generateNewStates :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> [Board]
-generateNewStates board history grid slides jumps player = -- To Be Completed
+generateNewStates board history grid slides jumps player =
+ (statesToBoards (generateNewStates_helper state state_history moves player)) 
+ where
+ state = boardToState board grid
+ state_history = boardsToStates history grid
+ moves = moveGenerator state slides jumps player
+
+-- combine grid and board to produce a state
+boardToState :: Board -> Grid -> State
+boardToState board grid 
+ | board == [] = []
+ | otherwise = ((head board), (head grid)):(boardToState (tail board) (tail grid))
+
+-- given a list of boards and a grid, convert to a list of states
+boardsToStates :: [Board] -> Grid -> [State]
+boardsToStates boards grid
+ | boards == [] = []
+ | otherwise = (boardToState (head boards) grid):(boardsToStates (tail boards) grid)
+
+-- convert a state to the form of a board
+stateToBoard :: State -> Board
+stateToBoard state
+ | state == [] = []
+ | otherwise = (fst (head state)):(stateToBoard (tail state))
+
+-- convert a list of states to a list of boards
+statesToBoards :: [State] -> [Board]
+statesToBoards states
+ | states == [] = []
+ | otherwise = (stateToBoard (head states)):(statesToBoards (tail states))
+
+
+-- it is the same as generateNewStates, but instead of consuming slides and jumps
+-- it takes in a list of moves which are already generated in generateNewStates.
+generateNewStates_helper :: State -> [State] -> [Move] -> Piece -> [State]
+generateNewStates_helper state history [] player = []
+generateNewStates_helper state history moves player =
+ if (elem (generateNewStateForOneMove state (head moves) player) history)
+  then (generateNewStates_helper state history (tail moves) player)
+  else (generateNewStateForOneMove state (head moves) player):
+       (generateNewStates_helper state history (tail moves) player)
+
+-- generate a new board state in accordance with a move.
+generateNewStateForOneMove :: State -> Move -> Piece -> State
+generateNewStateForOneMove state move player =
+ changeStateTo (changeStateFrom state move) move player
+
+-- given a board and a move, change the state of the corresponding tile to
+-- empty meaning that a piece has moved out from that tile.
+changeStateFrom :: State -> Move -> State
+changeStateFrom [] move = []
+changeStateFrom state move =
+ if ((fst move) == (snd (head state)))
+  then (removePiece (head state)):(tail state)
+  else (head state):(changeStateFrom (tail state) move)
+
+-- given a board and a move, add a player piece to the correspeonding tile,
+-- meaning that the piece has moved to that tile.
+changeStateTo :: State -> Move -> Piece -> State
+changeStateTo [] move player = []
+changeStateTo state move player =
+ if ((snd move) == (snd (head state)))
+  then ((addPiece (head state) player):(tail state))
+  else (head state):(changeStateTo (tail state) move player)
+
+-- remove a piece from the input tile.
+removePiece :: Tile -> Tile
+removePiece (piece, point) = (D, point)
+
+-- add a player peice to the input tile.
+addPiece :: Tile -> Piece -> Tile
+addPiece (piece, point) player = (player, point)
 
 --
 -- moveGenerator
@@ -397,8 +635,71 @@ generateNewStates board history grid slides jumps player = -- To Be Completed
 -- Returns: the list of all valid moves that the player could make
 --
 
+---------has bug----------
 moveGenerator :: State -> [Slide] -> [Jump] -> Piece -> [Move]
-moveGenerator state slides jumps player = -- To Be Completed										 
+moveGenerator state slides jumps player
+ | state == [] = []
+ | (fst cur_tile) == player =
+    (vSforOnePiece slides (snd cur_tile) state) ++
+    (vJforOnePiece jumps (snd cur_tile) state player) ++
+    (moveGenerator (tail state) slides jumps player)
+ | otherwise = moveGenerator (tail state) slides jumps player
+ where
+  cur_tile = (head state)
+
+-- produces all the valid slides for a piece on the board given the state
+-- of the board.
+vSforOnePiece :: [Slide] -> Point -> State -> [Move]
+vSforOnePiece slides point state
+ | slides == [] = []
+ | ((fst (head slides)) == point) && (check_moveTo_empty (snd (head slides)) state) =
+    (head slides):(vSforOnePiece (tail slides) point state)
+ | otherwise = vSforOnePiece (tail slides) point state
+
+-- produces all the valid jumps for a piece on the board given the state
+-- of the board.
+vJforOnePiece :: [Jump] -> Point -> State -> Piece -> [Move]
+vJforOnePiece jumps point state player
+ | jumps == [] = []
+ | ((get_jump_fst (head jumps)) == point) && 
+   (check_moveTo_EmptyorOppPiece (get_jump_thd (head jumps)) state player) &&
+   (check_middlePiece_Equal (get_jump_snd (head jumps)) state player) =
+    (jumpToMove (head jumps)):(vJforOnePiece (tail jumps) point state player)
+ | otherwise = vJforOnePiece (tail jumps) point state player
+
+-- convert jump to move
+jumpToMove :: Jump -> Move
+jumpToMove jump = (get_jump_fst jump, get_jump_thd jump)
+
+-- check the point where a peice is moving to is empty
+check_moveTo_empty:: Point -> State -> Bool
+check_moveTo_empty point state 
+ | state == [] = False
+ | point == (snd (head state)) =
+    if ((fst (head state)) == D)
+     then True
+     else False
+ | otherwise = check_moveTo_empty point (tail state)
+
+-- check the point where a peice is moving to is empty or is an opponent's peice
+check_moveTo_EmptyorOppPiece:: Point -> State -> Piece -> Bool
+check_moveTo_EmptyorOppPiece point state player
+ | state == [] = False
+ | point == (snd (head state)) =
+    if not ((fst (head state)) == player)
+     then True
+     else False
+ | otherwise = check_moveTo_EmptyorOppPiece point (tail state) player
+
+-- check there is a piece in the middle for a piece to jump over
+check_middlePiece_Equal :: Point -> State -> Piece -> Bool
+check_middlePiece_Equal point state player
+ | state == [] = False
+ | point == (snd (head state)) =
+    if (fst (head state)) == player
+     then True
+     else False
+ | otherwise = check_middlePiece_Equal point (tail state) player										 
 
 --
 -- boardEvaluator
