@@ -309,7 +309,7 @@ generateGrid n1 n2 n3 acc
 --
 
 ---------completed----------
-generateSlides :: Grid -> Int -> [Slide] -- To Be Completed 
+generateSlides :: Grid -> Int -> [Slide] 
 generateSlides [] n = []
 generateSlides b n = generateSlides_helper b b n
 
@@ -343,17 +343,28 @@ generateValidSlidesForOnePoint b slides
 generateAllSlidesForOnePoint :: Point -> Int -> [Slide]
 generateAllSlidesForOnePoint p int 
  | (snd p) < (div (2*n-2) 2) = 
-      list ++ [(p, (fst lp, (snd lp)-1)), (p, (fst rp, (snd rp)+1))]
+      [(p, ((fst p)-1, snd p)),
+       (p, (fst lp, (snd lp)-1)),
+       (p, (fst p, (snd p)-1)),
+       (p, ((fst p)+1, snd p)),
+       (p, (fst rp, (snd rp)+1)),
+       (p, (fst p, (snd p)+1))]
  | (snd p) > (div (2*n-2) 2) = 
-      list ++ [(p, (fst lp, (snd lp)+1)), (p, (fst rp, (snd rp)-1))]
+      [(p, ((fst p)-1, snd p)),
+       (p, (fst p, (snd p)-1)),
+       (p, (fst rp, (snd rp)-1)),
+       (p, ((fst p)+1, snd p)),
+       (p, (fst p, (snd p)+1)),
+       (p, (fst lp, (snd lp)+1))]
  | otherwise = 
-      list ++ [(p, (fst lp, (snd lp)-1)), (p, (fst lp, (snd rp)+1))]
+      [(p, ((fst p)-1, snd p)),
+       (p, (fst lp, (snd lp)-1)), 
+       (p, (fst p, (snd p)-1)),
+       (p, ((fst p)+1, snd p)),
+       (p, (fst p, (snd p)+1)),
+       (p, (fst lp, (snd rp)+1))] 
  where
  n = fromIntegral int
- list = [(p, (fst p, (snd p)-1)),
-          (p, (fst p, (snd p)+1)),
-          (p, ((fst p)-1, snd p)),
-          (p, ((fst p)+1, snd p))]
  lp = ((fst p)-1, snd p)
  rp = ((fst p)+1, snd p)
 
