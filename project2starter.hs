@@ -126,14 +126,14 @@ type Move = (Point,Point)
 --
 -- Some test results to see what functions are producing 
 --
-run = crusher ["W------------BB-BBB","----W--------BB-BBB","-W-----------BB-BBB"] 'W' 2 3
+--run = crusher ["W------------BB-BBB","----W--------BB-BBB","-W-----------BB-BBB"] 'W' 2 3
 grid0 = generateGrid 3 2 4 []
 slides0 = generateSlides grid0 3
 jumps0 = generateLeaps grid0 3
 board0 = sTrToBoard "WWW-WW-------BB-BBB"
 newBoards0 = generateNewStates board0 [] grid0 slides0 jumps0 W
-tree0 = generateTree board0 [] grid0 slides0 jumps0 W 4 3
-heuristic0 = boardEvaluator W [] 3
+--tree0 = generateTree board0 [] grid0 slides0 jumps0 W 4 3
+--heuristic0 = boardEvaluator W [] 3
 
 -- some items useful for testing:
 grid3::[Point]
@@ -190,8 +190,8 @@ jumps2 = [((0,0),(1,1),(1,2)),((1,0),(1,1),(0,2)),((0,1),(1,1),(2,1)),((2,1),(1,
 -- Returns: a list of String with the new current board consed onto the front
 --
 
-crusher :: [String] -> Char -> Int -> Int -> [String]
-crusher (current:old) p d n = -- To Be Completed
+--crusher :: [String] -> Char -> Int -> Int -> [String]
+--crusher (current:old) p d n = -- To Be Completed
 
 --
 -- gameOver
@@ -209,8 +209,8 @@ crusher (current:old) p d n = -- To Be Completed
 -- Returns: True if the board is in a state where the game has ended, otherwise False
 --
 
-gameOver :: Board -> [Board] -> Int -> Bool
-gameOver board history n = -- To Be Completed
+--gameOver :: Board -> [Board] -> Int -> Bool
+--gameOver board history n = -- To Be Completed
 
 --
 -- sTrToBoard
@@ -498,8 +498,8 @@ get_jump_snd (a,b,c) = b
 --          otherwise produces the next best board
 --
 
-stateSearch :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> Board
-stateSearch board history grid slides jumps player depth num = -- To Be Completed
+--stateSearch :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> Board
+--stateSearch board history grid slides jumps player depth num = -- To Be Completed
 
 --
 -- generateTree
@@ -522,8 +522,8 @@ stateSearch board history grid slides jumps player depth num = -- To Be Complete
 -- Returns: the corresponding BoardTree generated till specified depth
 --
 
-generateTree :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> BoardTree
-generateTree board history grid slides jumps player depth n = -- To Be Completed
+--generateTree :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> BoardTree
+--generateTree board history grid slides jumps player depth n = -- To Be Completed
 
 --
 -- generateNewStates
@@ -648,15 +648,19 @@ addPiece (piece, point) player = (player, point)
 
 ---------has bug----------
 moveGenerator :: State -> [Slide] -> [Jump] -> Piece -> [Move]
-moveGenerator state slides jumps player
+moveGenerator state slides jumps player = 
+ moveGenerator_helper state state slides jumps player
+
+moveGenerator_helper:: State -> State -> [Slide] -> [Jump] -> Piece -> [Move]
+moveGenerator_helper static_state state slides jumps player
  | state == [] = []
  | (fst cur_tile) == player =
-    (vSforOnePiece slides (snd cur_tile) state) ++
-    (vJforOnePiece jumps (snd cur_tile) state player) ++
-    (moveGenerator (tail state) slides jumps player)
- | otherwise = moveGenerator (tail state) slides jumps player
+    (vSforOnePiece slides (snd cur_tile) static_state) ++
+    (vJforOnePiece jumps (snd cur_tile) static_state player) ++
+    (moveGenerator_helper static_state (tail state) slides jumps player)
+ | otherwise = moveGenerator_helper static_state (tail state) slides jumps player
  where
-  cur_tile = (head state)
+  cur_tile = (head state) 
 
 -- produces all the valid slides for a piece on the board given the state
 -- of the board.
@@ -731,8 +735,8 @@ check_middlePiece_Equal point state player
 -- Returns: the goodness value of the provided board
 --
 
-boardEvaluator :: Piece -> [Board] -> Int -> Board -> Bool -> Int
-boardEvaluator player history n board myTurn = -- To Be Completed
+--boardEvaluator :: Piece -> [Board] -> Int -> Board -> Bool -> Int
+--boardEvaluator player history n board myTurn = -- To Be Completed
 
 --
 -- minimax
@@ -750,8 +754,8 @@ boardEvaluator player history n board myTurn = -- To Be Completed
 -- Returns: the next best board
 --
 
-minimax :: BoardTree -> (Board -> Bool -> Int) -> Board
-minimax (Node _ b children) heuristic = -- To Be Completed
+--minimax :: BoardTree -> (Board -> Bool -> Int) -> Board
+--minimax (Node _ b children) heuristic = -- To Be Completed
 
 --
 -- minimax'
@@ -774,7 +778,7 @@ minimax (Node _ b children) heuristic = -- To Be Completed
 -- Returns: the minimax value at the top of the tree
 --
 
-minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
-minimax' boardTree heuristic maxPlayer = -- To Be Completed
+--minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
+--minimax' boardTree heuristic maxPlayer = -- To Be Completed
 
 
