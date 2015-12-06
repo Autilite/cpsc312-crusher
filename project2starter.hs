@@ -148,6 +148,14 @@ tree0 = generateTree board0 [] grid0 slides0 jumps0 W 1 3
 heuristic0 = boardEvaluator W [] 3
 heuristic1 = boardEvaluator B [board0] 3
 
+play :: [String] -> Char -> Int -> Int -> IO ()
+play history@(current:old) player depth n
+  | gameOver (sTrToBoard current) (map sTrToBoard old) n = putStrLn "Game over."
+  | otherwise = do 
+       let history'@(new:_) = crusher history player depth n
+       putStrLn $ player:" played: " ++ new
+       play history' (if player == 'W' then 'B' else 'W') depth n
+
 -- some items useful for testing:
 grid3::[Point]
 grid3 = [(0,0),(1,0),(2,0),(0,1),(1,1),(2,1),(3,1),(0,2),(1,2),(2,2),(3,2),(4,2),(0,3),(1,3),(2,3),(3,3),(0,4),(1,4),(2,4)]
@@ -864,11 +872,13 @@ minimax (Node _ b children) heuristic =
 minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
 minimax' boardTree heuristic maxPlayer
   -- not at the bottom and maxPlayer is playing, take maximum of nextBoards
-  | depth boardTree /= 0 && maxPlayer = maximum (map partialMinimax' (nextBoards boardTree))
+  | depthCheck && emptyListCheck && maxPlayer = maximum (map partialMinimax' (nextBoards boardTree))
   -- not at the bottom and maxPlayer is not playing, take minimum of nextBoards
-  | depth boardTree /= 0              = minimum (map partialMinimax' (nextBoards boardTree))
+  | depthCheck && emptyListCheck              = minimum (map partialMinimax' (nextBoards boardTree))
   -- at the bottom, evaluate board
-  | otherwise                         = heuristic (board boardTree) maxPlayer
-  where 
+  | otherwise                                 = heuristic (board boardTree) maxPlayer
+  where
+    depthCheck = depth boardTree /= 0
+    emptyListCheck = not (null (nextBoards boardTree))
     partialMinimax' = (\x -> minimax' x heuristic (not maxPlayer))
 
