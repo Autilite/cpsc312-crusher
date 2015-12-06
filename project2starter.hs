@@ -1,6 +1,18 @@
 -- CPSC 312 - Project 2
 -- by Khurram Ali Jaffery
 
+-- Student #1, Name: Kelvin Yip
+-- Student #1, Student #: 18016121
+-- Student #1, ugrad ID: s8u8
+
+-- Student #2, Name: Gisli Thor Thordarson
+-- Student #2, Student #: 73996150
+-- Student #2, ugrad ID: m8j0b
+
+-- Student #3, Name: Chun-Wei Yen
+-- Student #3, Student #: 33425125
+-- Student #3, ugrad ID: s2u9a
+
 -- Main Components:
 -- minimax algorithm
 -- a board evaluator
@@ -133,7 +145,8 @@ jumps0 = generateLeaps grid0 3
 board0 = sTrToBoard "WWW-WW-------BB-BBB"
 newBoards0 = generateNewStates board0 [] grid0 slides0 jumps0 W
 tree0 = generateTree board0 [] grid0 slides0 jumps0 W 1 3
---heuristic0 = boardEvaluator W [] 3
+heuristic0 = boardEvaluator W [] 3
+heuristic1 = boardEvaluator B [board0] 3
 
 -- some items useful for testing:
 grid3::[Point]
@@ -535,15 +548,15 @@ get_jump_snd (a,b,c) = b
 --
 
 -- TODO uncomment when minimax and boardEvaluator are implemented
---stateSearch :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> Board
---stateSearch board history grid slides jumps player depth num = -- To Be Completed
---    -- just return board if this board is game over
---    if (gameOver board history num)
---        then board
---        -- apply minimax to tree in current state
---        else minimax boardTree heuristic
---            where   boardTree = (generateTree board history grid slides jumps player depth num)
---                    heuristic = boardEvaluator player history num
+stateSearch :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> Board
+stateSearch board history grid slides jumps player depth num = -- To Be Completed
+   -- just return board if this board is game over
+   if (gameOver board history num)
+       then board
+       -- apply minimax to tree in current state
+       else minimax boardTree heuristic
+           where   boardTree = (generateTree board history grid slides jumps player depth num)
+                   heuristic = boardEvaluator player history num
 
 --
 -- generateTree
@@ -804,9 +817,15 @@ check_middlePiece_Equal point state player
 -- Returns: the goodness value of the provided board
 --
 
---boardEvaluator :: Piece -> [Board] -> Int -> Board -> Bool -> Int
---boardEvaluator player history n board myTurn = -- To Be Completed
-
+boardEvaluator :: Piece -> [Board] -> Int -> Board -> Bool -> Int
+boardEvaluator player history n board myTurn -- To Be Completed
+  | gameOver board history n && myTurn  = -10
+  | gameOver board history n            = 10
+  | otherwise                           = playerPieces - otherPlayerPieces
+  where
+    playerPieces = countPiece board player
+    otherPlayerPieces = countPiece board otherPlayer
+    otherPlayer = if player == W then B else W
 --
 -- minimax
 --
@@ -823,8 +842,18 @@ check_middlePiece_Equal point state player
 -- Returns: the next best board
 --
 
---minimax :: BoardTree -> (Board -> Bool -> Int) -> Board
---minimax (Node _ b children) heuristic = -- To Be Completed
+minimax :: BoardTree -> (Board -> Bool -> Int) -> Board
+minimax (Node _ b children) heuristic = -- To Be Completed
+  -- return the board of the children with the maximum board evaluator value
+  board (children!!index)
+  where
+    -- index of best next board
+    index = head [x | x <- [0..(length minimaxList) - 1], minimaxList!!x == maxChild]
+    -- max board evaluator value
+    maxChild = maximum minimaxList
+    -- list of board evaluator values returned from the minimax' helper
+    minimaxList = map partialMinimax' children
+    partialMinimax' = (\x -> minimax' x heuristic False)
 
 --
 -- minimax'
@@ -847,7 +876,14 @@ check_middlePiece_Equal point state player
 -- Returns: the minimax value at the top of the tree
 --
 
---minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
---minimax' boardTree heuristic maxPlayer = -- To Be Completed
-
+minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
+minimax' boardTree heuristic maxPlayer
+  -- not at the bottom and maxPlayer is playing, take maximum of nextBoards
+  | depth boardTree /= 0 && maxPlayer = maximum (map partialMinimax' (nextBoards boardTree))
+  -- not at the bottom and maxPlayer is not playing, take minimum of nextBoards
+  | depth boardTree /= 0              = minimum (map partialMinimax' (nextBoards boardTree))
+  -- at the bottom, evaluate board
+  | otherwise                         = heuristic (board boardTree) maxPlayer
+  where 
+    partialMinimax' = (\x -> minimax' x heuristic (not maxPlayer))
 
