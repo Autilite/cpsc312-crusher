@@ -215,17 +215,23 @@ jumps2 = [((0,0),(1,1),(1,2)),((1,0),(1,1),(0,2)),((0,1),(1,1),(2,1)),((2,1),(1,
 
 crusher :: [String] -> Char -> Int -> Int -> [String]
 crusher (current:old) p d n = -- To Be Completed
-    -- if the game is over (and stateSearch returns the current board), then
-    -- just add it to the list. This condition was unspecified in the project
-    -- specification so just ignore it
-    (boardToStr board):current:old
-    where board = stateSearch (sTrToBoard current)
-                              (losTrToloBoard old)
-                              grid slides jumps (charToPiece p) d n
-                  -- generate a regular hexagonal grid
-                  where grid = (generateGrid n (n-1) (2*(n-1)) [])
-                        slides = (generateSlides grid n)
-                        jumps = (generateLeaps grid n)
+    -- if the game is over (and stateSearch returns the current board), then we
+    -- make no move and return the input board history. This condition was
+    -- unspecified in the project specification so just do what would make
+    -- sense
+    if (gameOver curBoard history n)
+        then current:old
+        else
+            (boardToStr board):current:old
+            where curBoard = sTrToBoard current
+                  history = losTrToloBoard old
+                  board = stateSearch curBoard
+                                      history
+                                      grid slides jumps (charToPiece p) d n
+                          -- generate a regular hexagonal grid
+                          where grid = (generateGrid n (n-1) (2*(n-1)) [])
+                                slides = (generateSlides grid n)
+                                jumps = (generateLeaps grid n)
 
 --
 -- gameOver
@@ -744,7 +750,7 @@ moveGenerator :: State -> [Slide] -> [Jump] -> Piece -> [Move]
 moveGenerator state slides jumps player =
  moveGenerator_helper state state slides jumps player
 
--- a helper function to moveGenerator, in which it generates a list of all 
+-- a helper function to moveGenerator, in which it generates a list of all
 -- the moves, both slides and jumps, for the input player.
 moveGenerator_helper:: State -> State -> [Slide] -> [Jump] -> Piece -> [Move]
 moveGenerator_helper static_state state slides jumps player
