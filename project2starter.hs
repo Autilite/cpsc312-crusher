@@ -370,6 +370,8 @@ generateSlides :: Grid -> Int -> [Slide]
 generateSlides [] n = []
 generateSlides b n = generateSlides_helper b b n
 
+-- a helper function to generateSlides, in which it generates slides for all the
+-- points on the grid.
 generateSlides_helper b points_left n
  | points_left == [] = []
  | otherwise =
@@ -451,6 +453,8 @@ generateLeaps :: Grid -> Int -> [Jump] -- To Be Completed
 generateLeaps [] n = []
 generateLeaps b n = generateLeaps_helper b b n
 
+-- a helper function to generateSlides, in which it generates leaps for all the
+-- points on the grid.
 generateLeaps_helper b points_left n
  | points_left == [] = []
  | otherwise =
@@ -741,6 +745,8 @@ moveGenerator :: State -> [Slide] -> [Jump] -> Piece -> [Move]
 moveGenerator state slides jumps player =
  moveGenerator_helper state state slides jumps player
 
+-- a helper function to moveGenerator, in which it generates a list of all 
+-- the moves, both slides and jumps, for the input player.
 moveGenerator_helper:: State -> State -> [Slide] -> [Jump] -> Piece -> [Move]
 moveGenerator_helper static_state state slides jumps player
  | state == [] = []
