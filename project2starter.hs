@@ -776,52 +776,45 @@ check_middlePiece_Equal point state player
      else False
  | otherwise = check_middlePiece_Equal point (tail state) player
 
+
 --
 -- boardEvaluator
 --
--- This function consumes a board and performs a static board evaluation, by
--- taking into account whose perspective the program is playing from, the list
--- of boards already seen, the size of the board, and whether or not it is the
--- program's turn or not; to generate quantitative measures of the board, and
--- accordingly produce a goodness value of the given board
---
--- Arguments:
--- -- player: W or B representing the player the program is
--- -- history: a list of Boards of representing all boards already seen
--- -- n: an Integer representing the dimensions of the board
--- -- board: a Board representing the most recent board
--- -- myTurn: a Boolean indicating whether it is the program's turn or the opponents.
---
--- Returns: the goodness value of the provided board
---
+-- Usage: boardEvaluator player history n board myTurn
+-- Before: player is the player the program represents, W or B (of type Piece)
+--         history is a list of "Board"'s that have already appeared in the game
+--         n is the dimension fo the board, of type Int
+--         board is the current Board (of type Board)
+--         myTurn is a Bool, true if it is the player's turn, false otherwise
+-- Returns: an Int representing how good the current board is for the player.
+--          High numbers are good for the player.
 
 boardEvaluator :: Piece -> [Board] -> Int -> Board -> Bool -> Int
-boardEvaluator player history n board myTurn -- To Be Completed
+boardEvaluator player history n board myTurn
+  -- game is over and its our turn => we lost
   | gameOver board history n && myTurn  = -10
+  -- game is over and its not our turn => we won
   | gameOver board history n            = 10
+  -- game not over, count pieces of each player
   | otherwise                           = playerPieces - otherPlayerPieces
   where
     playerPieces = countPiece board player
     otherPlayerPieces = countPiece board otherPlayer
     otherPlayer = if player == W then B else W
+
 --
 -- minimax
 --
--- This function implements the minimax algorithm, it consumes a search tree,
--- and an appropriate heuristic to apply to the tree, by applying minimax it
--- produces the next best board that the program should make a move to
---
--- Arguments:
--- -- (Node _ b children): a BoardTree to apply minimax algorithm on
--- -- heuristic: a paritally evaluated boardEvaluator representing the
---				 appropriate heuristic to apply based on the size of the board,
---				 who the program is playing as, and all the boards already seen
---
--- Returns: the next best board
---
+-- Usage: minimax boardTree heuristic
+-- Before: boardTree is a BoardTree representing all the possible boards the game
+--         could go to in the next n plays where n is the number of moves we allow the
+--         the program to look forward to. This n is also the height of the boardTree.
+--         heuristic is a partially applied boardEvaluator function. The board and myTurn
+--         arguments are missing.
+-- Returns: the best board for us to go to in the next play.
 
 minimax :: BoardTree -> (Board -> Bool -> Int) -> Board
-minimax (Node _ b children) heuristic = -- To Be Completed
+minimax (Node _ b children) heuristic =
   -- return the board of the children with the maximum board evaluator value
   board (children!!index)
   where
@@ -836,23 +829,15 @@ minimax (Node _ b children) heuristic = -- To Be Completed
 --
 -- minimax'
 --
--- This function is a helper to the actual minimax function, it consumes
--- a search tree, an appropriate heuristic to apply to the leaf nodes of
--- the tree, and based on whether it would have been the maximizing
--- player's turn, it accordingly propogates the values upwards until
--- it reaches the top to the base node, and produces that value.
---
--- Arguments:
--- -- (Node _ b []): a BoardTree
--- -- (Node _ b children): a BoardTree
--- -- heuristic: a paritally evaluated boardEvaluator representing the
---				 appropriate heuristic to apply based on the size of the board,
---				 who the program is playing as, and all the boards already seen
--- -- maxPlayer: a Boolean indicating whether the function should be maximizing
--- 				 or miniziming the goodness values of its children
---
--- Returns: the minimax value at the top of the tree
---
+-- Usage: minimax' boardTree heuristic maxPlayer
+-- Before: boardTree is a BoardTree representing the current branch of the BoardTree in 
+--         minimax we are looking at. If depth boardTree is 0 then we are at a leaf and 
+--         then we calculate the heuristic.
+--         heuristic is a partially applied boardEvaluator function. The board and myTurn
+--         arguments are missing.
+--         maxPlayer is a Bool representing whether it is the programs turn to do at the current
+--         level of the BoardTree from minimax. Indicates whether to maximize or minimize.
+-- Returns: an Int representing the minimax value at the top of the tree.
 
 minimax' :: BoardTree -> (Board -> Bool -> Int) -> Bool -> Int
 minimax' boardTree heuristic maxPlayer
