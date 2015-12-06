@@ -114,8 +114,8 @@ type Slide = (Point,Point)
 
 --
 -- Jump is a tuple of 2 elements
--- an internal representation of a leap
 -- where the first element represents the point to move from
+-- an internal representation of a leap
 -- 		 the second element represents the adjacent point to move over
 --		 the third element represents the point to move to
 --
@@ -203,8 +203,18 @@ jumps2 = [((0,0),(1,1),(1,2)),((1,0),(1,1),(0,2)),((0,1),(1,1),(2,1)),((2,1),(1,
 -- Returns: a list of String with the new current board consed onto the front
 --
 
---crusher :: [String] -> Char -> Int -> Int -> [String]
---crusher (current:old) p d n = -- To Be Completed
+crusher :: [String] -> Char -> Int -> Int -> [String]
+crusher (current:old) p d n = -- To Be Completed
+    -- TODO figure out what to do for if stateSearch returns the same board as
+    -- current
+    (boardToStr board):current:old
+    where board = stateSearch (sTrToBoard current)
+                              (losTrToloBoard old)
+                              grid slides jumps (charToPiece p) d n
+                  -- generate a regular hexagon grid
+                  where grid = (generateGrid n (n-1) (2*(n-1)) [])
+                        slides = (generateSlides grid n)
+                        jumps = (generateLeaps grid n)
 
 --
 -- gameOver
@@ -260,6 +270,18 @@ sTrToBoard s = map (\ x -> check x) s
         check 'W' = W
         check 'B' = B
         check '-' = D
+
+-- This function takes a list of String and converts them to a list of Board
+losTrToloBoard :: [String] -> [Board]
+losTrToloBoard los = map (\x -> sTrToBoard x) los
+
+-- This function takes character and converts it to a Piece
+-- Assume the input is either 'W' or 'B'
+charToPiece :: Char -> Piece
+charToPiece c =
+    if c == 'W'
+        then W
+        else B
 
 --
 -- boardToStr
