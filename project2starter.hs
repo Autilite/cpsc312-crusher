@@ -148,6 +148,8 @@ tree0 = generateTree board0 [] grid0 slides0 jumps0 W 1 3
 heuristic0 = boardEvaluator W [] 3
 heuristic1 = boardEvaluator B [board0] 3
 
+-- play function written by an anonymous user on piazza.
+-- reference link @369 on piazza
 play :: [String] -> Char -> Int -> Int -> IO ()
 play history@(current:old) player depth n
   | gameOver (sTrToBoard current) (map sTrToBoard old) n = putStrLn "Game over."
