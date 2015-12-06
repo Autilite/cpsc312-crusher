@@ -1,6 +1,18 @@
 -- CPSC 312 - Project 2
 -- by Khurram Ali Jaffery
 
+-- Student #1, Name: Kelvin Yip
+-- Student #1, Student #: 18016121
+-- Student #1, ugrad ID: s8u8
+
+-- Student #2, Name: Gisli Thor Thordarson
+-- Student #2, Student #: 73996150
+-- Student #2, ugrad ID: m8j0b
+
+-- Student #3, Name: Chun-Wei Yen
+-- Student #3, Student #: 33425125
+-- Student #3, ugrad ID: s2u9a
+
 -- Main Components:
 -- minimax algorithm
 -- a board evaluator
