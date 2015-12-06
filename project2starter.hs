@@ -151,7 +151,7 @@ heuristic1 = boardEvaluator B [board0] 3
 play :: [String] -> Char -> Int -> Int -> IO ()
 play history@(current:old) player depth n
   | gameOver (sTrToBoard current) (map sTrToBoard old) n = putStrLn "Game over."
-  | otherwise = do 
+  | otherwise = do
        let history'@(new:_) = crusher history player depth n
        putStrLn $ player:" played: " ++ new
        play history' (if player == 'W' then 'B' else 'W') depth n
@@ -196,30 +196,33 @@ jumps2 = [((0,0),(1,1),(1,2)),((1,0),(1,1),(0,2)),((0,1),(1,1),(2,1)),((2,1),(1,
 --
 -- crusher
 --
--- This function consumes a list of boards, a player, the depth of
--- search tree, the size of the provide boards, and produces the
--- next best board possible for the provided player, and accordingly
--- makes the move and returns new board consed onto the list of boards
+-- This is the main function that 'plays' the game. It takes the current board,
+-- the history of board states, the player (either 'W' or 'B'), the depth of
+-- the search tree, and the dimension of the board.
 --
--- Arguments:
--- -- (current:old): current represents the most recent board, old is
---                   the history of all boards already seen in game
--- -- p: 'W' or 'B' representing the player the program is
--- -- d: an Integer indicating depth of search tree
--- -- n: an Integer representing the dimensions of the board
+-- The board used is a regular hexagonal grid. The value provided for the
+-- dimension input is just an integer which represents the length of each side.
 --
--- Returns: a list of String with the new current board consed onto the front
+-- Usage:
+--  crusher [current_board|history] player depth dimension
+--
+-- Example:
+--  crusher ["WWW-WW-------BB-BBB"] 'W' 2 3
+--
+-- Returns:
+--  List of string as the board state with the next move at the front
 --
 
 crusher :: [String] -> Char -> Int -> Int -> [String]
 crusher (current:old) p d n = -- To Be Completed
-    -- TODO figure out what to do for if stateSearch returns the same board as
-    -- current
+    -- if the game is over (and stateSearch returns the current board), then
+    -- just add it to the list. This condition was unspecified in the project
+    -- specification so just ignore it
     (boardToStr board):current:old
     where board = stateSearch (sTrToBoard current)
                               (losTrToloBoard old)
                               grid slides jumps (charToPiece p) d n
-                  -- generate a regular hexagon grid
+                  -- generate a regular hexagonal grid
                   where grid = (generateGrid n (n-1) (2*(n-1)) [])
                         slides = (generateSlides grid n)
                         jumps = (generateLeaps grid n)
@@ -227,17 +230,20 @@ crusher (current:old) p d n = -- To Be Completed
 --
 -- gameOver
 --
--- This function consumes a board, a list of boards, and the dimension
--- of board and determines whether the given board is in a state where
--- the game has ended by checking if the board is present in the provided
--- list of boards or either the W or B pieces are less than dimension of board
+-- This function determines whether the game is over. It takes the current
+-- board the game's board state history along with the dimension of the board.
 --
--- Arguments:
--- -- board: a Board representing the most recent board
--- -- history: a list of Boards of representing all boards already seen
--- -- n: an Integer representing the dimensions of the board
+-- The game is over if any of the following conditions are met:
+--  * The current board is a repeat of a previous board state
+--  * White has less than n pieces remaining
+--  * Black has less than n pieces remaining
 --
--- Returns: True if the board is in a state where the game has ended, otherwise False
+--  Example:
+--      gameOver [W,W,D,D,D,B,B] [] 2
+--
+--  Return:
+--      true if the game is over
+--      false if it isn't
 --
 
 gameOver :: Board -> [Board] -> Int -> Bool
@@ -247,8 +253,8 @@ gameOver board history n  -- To Be Completed
     | countPiece board B < n    = True
     | otherwise                 = False
 
--- counts and returns the number of Piece there are in the Board
--- this function recursively checks the Board to see if each element is piece
+-- This is a helper function that recursively counts the number of Piece there
+-- are on the board.
 countPiece :: Board -> Piece -> Int
 countPiece board piece
     | null board                = 0
@@ -279,12 +285,13 @@ sTrToBoard s = map (\ x -> check x) s
         check 'B' = B
         check '-' = D
 
--- This function takes a list of String and converts them to a list of Board
+-- This function takes a list of String and converts them to a list of Board.
+-- It applies the function sTrToBoard to each of the String in the list.
 losTrToloBoard :: [String] -> [Board]
 losTrToloBoard los = map (\x -> sTrToBoard x) los
 
 -- This function takes character and converts it to a Piece
--- Assume the input is either 'W' or 'B'
+-- Precondition: Assume the input is either 'W' or 'B'
 charToPiece :: Char -> Piece
 charToPiece c =
     if c == 'W'
@@ -532,36 +539,32 @@ get_jump_fst (a,b,c) = a
 get_jump_snd:: Jump -> Point
 get_jump_snd (a,b,c) = b
 
---
 -- stateSearch
 --
--- This function consumes the arguments described below, based on the internal
--- representation of the game, if there is no point in playing the game as the
--- current board is in a state where the game has ended then just return the
--- board, else generate a search tree till the specified depth and apply
--- minimax to it by using the appropriately generated heuristic
+-- This function takes the Board state and finds the best next move for the
+-- player, given the game state and constraints provided as input. These
+-- constraints include: the state of the current board, the game's board state
+-- history, the grid, the list of possible slides and jumps, the current player
+-- and the dimension of the board. If there is no next best move since the game
+-- has already ended, then this function just returns the current board.
 --
--- Arguments:
--- -- board: a Board representing the most recent board
--- -- history: a list of Boards of representing all boards already seen
--- -- grid: the Grid representing the coordinate-grid the game being played
--- -- slides: the list of all Slides possible for the given grid
--- -- jumps: the list of all Jumps possible for the given grid
--- -- player: W or B representing the player the program is
--- -- depth: an Integer indicating depth of search tree
--- -- num: an Integer representing the dimensions of the board
+-- Usage:
+--  stateSearch board history grid slides jumps player depth dimension
 --
--- Returns: the current board if game is over,
---          otherwise produces the next best board
+-- Return:
+--  board if the game is over
+--  otherwise it returns the best board to move
 --
 
--- TODO uncomment when minimax and boardEvaluator are implemented
 stateSearch :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> Board
 stateSearch board history grid slides jumps player depth num = -- To Be Completed
-   -- just return board if this board is game over
+   -- If the game is over, then there's no point in searching for the next best
+   -- move. In that case, just return the current board
    if (gameOver board history num)
        then board
-       -- apply minimax to tree in current state
+       -- generate all the possible moves from this board state up to the given
+       -- depth. We then apply the minimax algorithm to it, given the heuristic
+       -- to find the next best move
        else minimax boardTree heuristic
            where   boardTree = (generateTree board history grid slides jumps player depth num)
                    heuristic = boardEvaluator player history num
@@ -569,22 +572,17 @@ stateSearch board history grid slides jumps player depth num = -- To Be Complete
 --
 -- generateTree
 --
--- This function consumes the arguments described below, and builds a search
--- tree till specified depth from scratch by using the current board and
--- generating all the next states recursively; however it doesn't generate
--- children of those states which are in a state where the game has ended.
+-- This function generates the search tree of all possible moves from the Board
+-- up to the given depth. This function takes the current board and the
+-- associated game's board history, the game's grid, the list of possible
+-- slides and jumps, the current player's turn (W or B), the search tree depth,
+-- and the dimension of the board.
 --
--- Arguments:
--- -- board: a Board representing the most recent board
--- -- history: a list of Boards of representing all boards already seen
--- -- grid: the Grid representing the coordinate-grid the game being played
--- -- slides: the list of all Slides possible for the given grid
--- -- jumps: the list of all Jumps possible for the given grid
--- -- player: W or B representing the player the program is
--- -- depth: an Integer indicating depth of search tree
--- -- n: an Integer representing the dimensions of the board
+-- Usage:
+--  generateTree board history grid slides jumps player depth dimension
 --
--- Returns: the corresponding BoardTree generated till specified depth
+-- Return:
+--  the BoardTree of all possible moves up to the given depth
 --
 
 generateTree :: Board -> [Board] -> Grid -> [Slide] -> [Jump] -> Piece -> Int -> Int -> BoardTree
@@ -592,7 +590,7 @@ generateTree board history grid slides jumps player depth n = -- To Be Completed
     -- base case:
     -- if the board is game over
     -- or it has reached the depth.
-    -- Assume the root node has a depth of 0
+    -- The root node has a depth of 0
     -- then just return empty list for children
     if ((gameOver board history n) || depth == 0)
         then (Node depth board [])
@@ -600,20 +598,21 @@ generateTree board history grid slides jumps player depth n = -- To Be Completed
             Node depth board
             -- generate the next state given this state and map those to a
             -- TreeBoard.
-            -- The next TreeBoard state needs updated state info for the tree
-            -- -- Board is added to the front of the history
-            -- -- board structure (grid/slides/jumps/n) are constant
-            -- -- This player's turn ends and moves to the next
-            -- -- depth is decremented
+            -- The next TreeBoard state needs the updated state info for the
+            -- tree
+            -- * Board is added to the front of the history
+            -- * board structure (grid/slides/jumps/n) are constant
+            -- * This player's turn ends and moves to the next
+            -- * depth is decremented
             (map (\x -> generateTree x (board:history) grid slides jumps (nextPlayer player) (depth-1) n)
             (generateNewStates board history grid slides jumps player)))
 
--- helper function to return the next player to move
+-- This is a helper function which returns the Piece whose turn comes after the
+-- given player
+-- Precondition: input is either W or B
 nextPlayer :: Piece -> Piece
-nextPlayer piece
-    | piece == W    = B
-    | piece == B    = W
-    | otherwise     = D
+nextPlayer piece =
+    if (piece == W) then B else W
 
 --
 -- generateNewStates
@@ -860,8 +859,8 @@ minimax (Node _ b children) heuristic =
 -- minimax'
 --
 -- Usage: minimax' boardTree heuristic maxPlayer
--- Before: boardTree is a BoardTree representing the current branch of the BoardTree in 
---         minimax we are looking at. If depth boardTree is 0 then we are at a leaf and 
+-- Before: boardTree is a BoardTree representing the current branch of the BoardTree in
+--         minimax we are looking at. If depth boardTree is 0 then we are at a leaf and
 --         then we calculate the heuristic.
 --         heuristic is a partially applied boardEvaluator function. The board and myTurn
 --         arguments are missing.
